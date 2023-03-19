@@ -1,7 +1,7 @@
 #include "mainJSE.h"
 
 //Ship Functions
-Ship::Ship(std::string inName, std::string inType, int inSize, Crew inCrew, int inMiningLvl, int inHull, int inShields, int inCombatManeuver, CargoHold inCargoHold)
+Ship::Ship(std::string inName, std::string inType, int inSize, Crew inCrew, int inAmountOfWeapons, int inMiningLvl, int inHull, int inShields, int inCombatManeuver, CargoHold inCargoHold)
 {
     name = inName;
     type = inType;
@@ -9,6 +9,7 @@ Ship::Ship(std::string inName, std::string inType, int inSize, Crew inCrew, int 
     crew = inCrew;
     miningLvl = inMiningLvl;
     populateWeapons(type, weapons);
+    amountOfWeapons = inAmountOfWeapons;
     populateDefences(type, defences);
     hull = inHull;
     shields = inShields;
@@ -23,49 +24,89 @@ int Ship::determineCombatRoll()
     return randomNumGenerator(skillAverage - 10, skillAverage);
 }
 
-void Ship::dealDamage(Weapon& weapon, WeaponsOfficer weaponsOfficer, Defence& defence)
+void Ship::dealDamage(Weapon& weapon, WeaponsOfficer weaponsOfficer, Defence& defence, std::string tempCrewDeathRecord)
 {
     int defenceMitigation = defence.getDefenceLvl() + ((this->crew.getWeaponsOfficer().getDefenceLvl() + this->crew.getEngineer().getDefenceSystemLvl()) / 2);
     if(shields > 0)
-    {
-        std::cout << this->name << ": Shield = " << shields << ". ";
-        shields -= std::max((weapon.getShieldDamage() + weaponsOfficer.getWeaponsLvl()) - defenceMitigation, 0);
-        std::cout << "Dealt " << std::max((weapon.getShieldDamage() + weaponsOfficer.getWeaponsLvl()) - defenceMitigation,0) << " damage by " << weapon.getName() << ". ";
-        std::cout << "Shield = " << shields << std::endl; 
+    {   
+        //Deal shield damage with defence mitigation, min damage is 10
+        shields -= std::max((weapon.getShieldDamage() + weaponsOfficer.getWeaponsLvl()) - defenceMitigation, 10);
+
+        if(shields <= 0)
+            std::cout << "The shields loss power leaving the hull exposed." << std::endl;
+        else    
+            std::cout << "The shields take a hit, but continue to function." << std::endl;
     }
     else
     {
-        std::cout << this->name << ": Hull = " << hull << ". ";
-        hull -= std::max(weapon.getHullDamage() - defenceMitigation, 0);
-        std::cout << "Dealt " << std::max((weapon.getHullDamage() + weaponsOfficer.getWeaponsLvl()) - defenceMitigation,0) << " damage by " << weapon.getName() << ". ";
-        std::cout << "Hull = " << hull << std::endl;
-        damageCrew((weapon.getHullDamage() + weaponsOfficer.getWeaponsLvl()) - defenceMitigation); 
+        //Deal hull damage with defence mitigation, min damage is 10
+        int damageDealt = std::max(weapon.getHullDamage() - defenceMitigation, 10);
+        hull -= damageDealt;
+
+        std::string damageAmount;
+        if(damageDealt >= 100)
+            damageAmount = "massive";
+        else if(damageDealt >= 50  && damageDealt < 100)  
+            damageAmount = "moderate";
+        else
+            damageAmount = "low";  
+
+        if(hull <= 0)
+            std::cout << "The hull takes catastrophic damage." << std::endl;
+        else
+            std::cout << "The hull takes " << damageAmount << " damage." << std::endl;
+
+        damageCrew((weapon.getHullDamage() + weaponsOfficer.getWeaponsLvl()) - defenceMitigation, tempCrewDeathRecord);
     }
 }
 
-void Ship::dealDamage(Weapon& weapon, WeaponsOfficer weaponsOfficer)
+void Ship::dealDamage(Weapon& weapon, WeaponsOfficer weaponsOfficer, std::string tempCrewDeathRecord)
 {
     if(shields > 0)
     {
-        std::cout << this->name << ": Shield = " << shields << ". ";
         shields -= weapon.getShieldDamage() + weaponsOfficer.getWeaponsLvl();
-        std::cout << "Dealt " << weapon.getShieldDamage() + weaponsOfficer.getWeaponsLvl() << " damage by " << weapon.getName() << ". ";
-        std::cout << "Shield = " << shields << std::endl; 
+
+        if(shields <= 0)
+            std::cout << "The shields loss power leaving the hull exposed." << std::endl;
+        else    
+            std::cout << "The shields take a hit, but continue to function." << std::endl;
     }
     else
     {
-        std::cout << this->name << ": Hull = " << hull << ". ";
-        hull -= weapon.getHullDamage() + weaponsOfficer.getWeaponsLvl();
-        std::cout << "Dealt " << weapon.getHullDamage() + weaponsOfficer.getWeaponsLvl() << " damage by " << weapon.getName() << ". ";
-        std::cout << "Hull = " << hull << std::endl;
-        damageCrew(weapon.getHullDamage() + weaponsOfficer.getWeaponsLvl());
+        int damageDealt = weapon.getHullDamage() + weaponsOfficer.getWeaponsLvl();
+        hull -= damageDealt;
+
+        std::string damageAmount;
+        if(damageDealt >= 100)
+            damageAmount = "massive";
+        else if(damageDealt >= 50  && damageDealt < 100)  
+            damageAmount = "moderate";
+        else
+            damageAmount = "low";
+
+        if(hull <= 0)
+            std::cout << "The hull takes catastrophic damage." << std::endl;
+        else
+            std::cout << "The hull takes " << damageAmount << " damage." << std::endl;
+
+        damageCrew(weapon.getHullDamage() + weaponsOfficer.getWeaponsLvl(), tempCrewDeathRecord);
     }
+}
+
+void Ship::dealAnomalyDamage(int damageDealt)
+{
+    if(this->hull <= 0)
+            std::cout << "The hull takes catastrophic damage." << std::endl;
+        else
+            std::cout << "The hull takes massive damage." << std::endl;
+
+    this->hull -= damageDealt;
 }
 
 
 bool Ship::checkFortitude()
 {
-    int fortitudeCheck = randomNumGenerator(0, 100);
+    int fortitudeCheck = randomNumGenerator(0, 200);
     
     if(this->crew.getCaptain().getFortitudeLvl() > (fortitudeCheck - this->hull))
         return true;
@@ -73,21 +114,27 @@ bool Ship::checkFortitude()
         return false;
 }
 
-void Ship::damageCrew(int damageDealt)
+void Ship::damageCrew(int damageDealt, std::string tempCrewDeathRecord)
 {
-    if(damageDealt > 50)
+    if(damageDealt > 10)
     {
-        if(damageDealt > 75)
-        //Kill officer
-        crew.killReplaceOfficer();
-
         crew.killCrew(randomNumGenerator(0,damageDealt/10));
+        if(damageDealt > 25)
+            crew.killReplaceOfficer(this, tempCrewDeathRecord);
     }
 }
 
-Weapon& Ship::selectWeapon(int currentRound)
+void Ship::addWeapon(Weapon newWeapon)
 {
-    return this->weapons[randomNumGenerator(0,determineAmountOfWeapons())];
+    int arraySlot = amountOfWeapons + 1;
+    amountOfWeapons++;
+    this->weapons[arraySlot] = newWeapon;
+}
+
+Weapon& Ship::selectWeapon()
+{
+    int weaponSelect = randomNumGenerator(0,amountOfWeapons);
+    return this->weapons[weaponSelect];
 }
 
 bool Ship::determineDefenceUse()
@@ -98,22 +145,34 @@ bool Ship::determineDefenceUse()
         return false;
 }
 
+int Ship::determineAmountOfCurrentWeapons()
+{
+    for(int i = 0; i < 5; i++)
+    {
+        if(this->weapons[i].getName() == "")
+        {
+            return i;
+        }
+    }
+    return 0;
+}
+
 int Ship::determineAmountOfWeapons()
 {
     switch(typeNumber(type))
     {
         case 0:
-            return 1;
+            return 0;
         case 1:
-            return 2;
+            return 1;
         case 2:
-            return 2;
+            return 1;
         case 3:
-            return 3;
+            return 2;
         case 4:
-            return 4;
+            return 3;
         case 5:
-            return 5;
+            return 4;
     }
 }
 
@@ -181,10 +240,47 @@ void Ship::repairShip()
 }
 
 //ExplorerShip Functions
-ExplorerShip::ExplorerShip(std::string inName, std::string inType, int inSize, Crew inCrew, int inMiningLvl, int inHull, int inShields, int inCombatManeuver, CargoHold inCargoHold) 
-    : Ship(inName, inType, inSize, inCrew, inMiningLvl, inHull, inShields, inCombatManeuver, inCargoHold)
+ExplorerShip::ExplorerShip(std::string inName, std::string inType, int inSize, Crew inCrew, int inAmountOfWeapons, int inMiningLvl, int inHull, int inShields, int inCombatManeuver, CargoHold inCargoHold, LogBook inLogBook) 
+    : Ship(inName, inType, inSize, inCrew, inAmountOfWeapons, inMiningLvl, inHull, inShields, inCombatManeuver, inCargoHold)
 {
-    date = 0;
+    this->logBook = inLogBook;
+}
+
+void ExplorerShip::takeSpoils(int liberatedFood, int liberatedFuel)
+{
+    while(getCargoHold().getCapacity() - getCargoHold().getTotalCargo() > 0 && (liberatedFood != 0 || liberatedFuel != 0))
+    {
+        if(liberatedFood > 0 && getCargoHold().getCapacity() - getCargoHold().getTotalCargo() > 0)
+        {
+            getCargoHold().buyFood(0);
+            liberatedFood--;
+        }
+        
+        if(liberatedFuel > 0 && getCargoHold().getCapacity() - getCargoHold().getTotalCargo() > 0)
+        {
+            getCargoHold().buyFuel(0);
+            liberatedFuel--;
+        }
+    }
+}
+
+//LogBook Functions
+LogBook::LogBook(int inStartMoney, int inStartFood, int inStartFuel, int inStartCrewNum)
+{
+    this->startMoney = inStartMoney;
+    this->startFood = inStartFood;
+    this->startFuel = inStartFuel;
+    this->startCrewNum = inStartCrewNum;
+}
+
+void LogBook::addSectorLog(std::string sectorLog)
+{
+    sectorLogs.push_back(sectorLog);
+}
+
+void LogBook::addCrewDeathRecord(std::string crewDeathRecord)
+{
+    this->crewDeathRecords.push_back(crewDeathRecord);
 }
 
 //Weapon Functions
@@ -215,46 +311,57 @@ Defence::Defence(std::string inName, int inEffectiveType, int inDefenceLvl, int 
 CargoHold::CargoHold(int inCapacity, int inMoney)
 {
     this->capacity = inCapacity;
-    this->totalCargo = 10;
-    this->food = 5;
-    this->fuel = 5;
+    this->totalCargo = 60;
+    this->food = 30;
+    this->fuel = 30;
     this->money = inMoney;
 }
 
 void CargoHold::addResource(Resource& newResource)
 {
     int arraySlot = determineAmountOfResources();
-    std::cout << &newResource << std::endl;
-    std::cout << "ADD " << arraySlot << std::endl;
     this->resources[arraySlot] = newResource;
     this->totalCargo += newResource.getSize();
 }
 
-void CargoHold::removeResources(int arraySlot)
+//This is just used to change money for Alien Ships
+void CargoHold::buyResource(int cost)
+{
+    this->money -= cost;
+}
+
+void CargoHold::sellResource(int arraySlot, int profit)
 {
     this->totalCargo -= this->resources[arraySlot].getSize();
     this->resources[arraySlot] = Resource();
+    std::cout << "Money: " << this->money << " -> ";
+    this->money += profit;
+    std::cout << this->money << std::endl;
 }
 
 void CargoHold::removeFood(int foodRemoved)
 {
     this->food -= foodRemoved;
+    this->totalCargo -= foodRemoved;
 }
 
 void CargoHold::buyFood(int foodCost)
 {
     this->food++;
+    this->totalCargo++;
     this->money -= foodCost;
 }
 
 void CargoHold::removeFuel(int fuelRemoved)
 {
     this->fuel -= fuelRemoved;
+    this->totalCargo -= fuelRemoved;
 }
 
 void CargoHold::buyFuel(int fuelCost)
 {
     this->fuel++;
+    this->totalCargo++;
     this->money -= fuelCost;
 }
 
@@ -267,7 +374,7 @@ int CargoHold::determineAmountOfResources()
             return i;
         }
     }
-    return -1;
+    return 0;
 }
 
 //Crew Functions
@@ -281,54 +388,60 @@ Crew::Crew(Captain inCaptain, Pilot inPilot, Engineer inEngineer, MiningOfficer 
     this->crewNum = inCrewNum;
 }
 
-void Crew::killReplaceOfficer()
+void Crew::killReplaceOfficer(Ship* ship, std::string tempCrewDeathRecord)
 {
     int officerKilled = randomNumGenerator(1,5);
     switch(officerKilled)
     {
         case 1:
             //Captain Killed
-            std::cout << "The Captain is killed in the attack" << std::endl;
+            std::cout << "The Captain is killed" << std::endl;
+            tempCrewDeathRecord += ".\nCaptain: " + this->captain.getTitle() + " " + this->captain.getName() + " was killed.";
             this->captain = Captain(randomNameGenerator(), randomNumGenerator(30,70), "Captain", std::max(1,this->captain.getSkillLvl().getLevel() - 1));
             this->crewNum--;
-            std::cout << "New Officer Lvl: " << this->captain.getSkillLvl().getLevel() << std::endl;
             break;
         case 2:
             //Pilot Killed
-            std::cout << "The Pilot is killed in the attack" << std::endl;
+            std::cout << "The Pilot is killed" << std::endl;
+            tempCrewDeathRecord += ".\nPilot: " + this->pilot.getTitle() + " " + this->pilot.getName() + " was killed.";
             this->pilot = Pilot(randomNameGenerator(), randomNumGenerator(30,70), "Lieutenant", std::max(1,this->pilot.getSkillLvl().getLevel() - 1));
             this->crewNum--;
-            std::cout << "New Officer Lvl: " << this->pilot.getSkillLvl().getLevel() << std::endl;
             break;
         case 3:
             //Engineer Killed
-            std::cout << "The Engineer is killed in the attack" << std::endl;
+            std::cout << "The Engineer is killed" << std::endl;
+            tempCrewDeathRecord += ".\nEngineer: " + this->engineer.getTitle() + " " + this->engineer.getName() + " was killed.";
             this->engineer = Engineer(randomNameGenerator(), randomNumGenerator(30,70), "Lieutenant", std::max(1,this->engineer.getSkillLvl().getLevel() - 1));
             this->crewNum--;
-            std::cout << "New Officer Lvl: " << this->engineer.getSkillLvl().getLevel() << std::endl;
             break;
         case 4:
             //MiningOfficer Killed
-            std::cout << "The Mining Officer is killed in the attack" << std::endl;
+            std::cout << "The Mining Officer is killed" << std::endl;
+            tempCrewDeathRecord += ".\nMining Officer: " + this->miningOfficer.getTitle() + " " + this->miningOfficer.getName() + " was killed.";
             this->miningOfficer = MiningOfficer(randomNameGenerator(), randomNumGenerator(30,70), "Lieutenant", std::max(1,this->miningOfficer.getSkillLvl().getLevel() - 1));
             this->crewNum--;
-            std::cout << "New Officer Lvl: " << this->miningOfficer.getSkillLvl().getLevel() << std::endl;
             break;
         case 5:
             //WeaponsOfficer Killed
-            std::cout << "The Weapons Officer is killed in the attack" << std::endl;
+            std::cout << "The Weapons Officer is killed" << std::endl;
+            tempCrewDeathRecord += ".\nWeapons Officer: " + this->weaponsOfficer.getTitle() + " " + this->weaponsOfficer.getName() + " was killed.";
             this->weaponsOfficer = WeaponsOfficer(randomNameGenerator(), randomNumGenerator(30,70), "Lieutenant", std::max(1,this->weaponsOfficer.getSkillLvl().getLevel() - 1));
             this->crewNum--;
-            std::cout << "New Officer Lvl: " << this->weaponsOfficer.getSkillLvl().getLevel() << std::endl;
             break;
+    }
+
+    if(ExplorerShip* exShip = dynamic_cast<ExplorerShip*>(ship))
+    {
+        (*exShip).getLogBook().addCrewDeathRecord(tempCrewDeathRecord);
     }
 }
 
 void Crew::killCrew(int numKilled)
 {
-    std::cout << "Crew " << this->crewNum << " -> ";
+    std::cout << numKilled << " crew members killed in the attack." << std::endl;
     crewNum -= numKilled;
-    std::cout << this->crewNum << std::endl;
+    crewNum = std::max(0,crewNum);
+    std::cout << "Crew Remaining: " << this->crewNum << std::endl;
 }
 
 //Officer Functions
@@ -351,45 +464,25 @@ void SkillLvl::setMaxMin()
 {
     switch(this->level)
     {
-        case 20: this->max = 100, this->min = 80;
+        case 10: this->max = 100, this->min = 80;
             break;
-        case 19: this->max = 95, this->min = 75;
+        case 9: this->max = 90, this->min = 70;
             break;
-        case 18: this->max = 90, this->min = 70;
+        case 8: this->max = 80, this->min = 60;
             break;
-        case 17: this->max = 85, this->min = 65;
+        case 7: this->max = 70, this->min = 50;
             break;
-        case 16: this->max = 80, this->min = 60;
+        case 6: this->max = 60, this->min = 40;
             break;
-        case 15: this->max = 75, this->min = 55;
+        case 5: this->max = 50, this->min = 30;
             break;
-        case 14: this->max = 70, this->min = 50;
+        case 4: this->max = 40, this->min = 20;
             break;
-        case 13: this->max = 65, this->min = 45;
-            break;
-        case 12: this->max = 60, this->min = 40;
-            break;
-        case 11: this->max = 55, this->min = 35;
-            break;
-        case 10: this->max = 50, this->min = 30;
-            break;
-        case 9: this->max = 45, this->min = 30;
-            break;
-        case 8: this->max = 40, this->min = 30;
-            break;
-        case 7: this->max = 35, this->min = 25;
-            break;
-        case 6: this->max = 35, this->min = 20;
-            break;
-        case 5: this->max = 35, this->min = 15;
-            break;
-        case 4: this->max = 30, this->min = 15;
-            break;
-        case 3: this->max = 25, this->min = 10;
+        case 3: this->max = 30, this->min = 10;
             break;
         case 2: this->max = 20, this->min = 5;
             break;
-        case 1: this->max = 20, this->min = 0;
+        case 1: this->max = 10, this->min = 0;
             break;
     }
 }
@@ -452,6 +545,9 @@ ExplorerShip generateExplorerShip()
     //Generate ExShip Crew
     Crew crew = generateExplorerShipCrew(size);
 
+    //Generate Amount of Weapons
+    int amountOfWeapons = generateAmountOfWeapons(type);
+
     //Generate Mininglvl
     int miningLvl = generateMiningLvl(type);
 
@@ -467,7 +563,9 @@ ExplorerShip generateExplorerShip()
     //Generate ExplorerShip CargoHold
     CargoHold cargoHold = generateExplorerShipCargoHold(type);
 
-    return ExplorerShip(name, type, size, crew, miningLvl, hull, shield, combatManeuver, cargoHold);
+    LogBook logBook(cargoHold.getMoney(), cargoHold.getFood(), cargoHold.getFuel(), crew.getCrewNum()+5);
+
+    return ExplorerShip(name, type, size, crew, amountOfWeapons, miningLvl, hull, shield, combatManeuver, cargoHold, logBook);
 }
 
 CargoHold generateExplorerShipCargoHold(std::string type)
@@ -478,23 +576,23 @@ CargoHold generateExplorerShipCargoHold(std::string type)
     switch(typeNumber(type))
     {
         case 0:
-            capacity = randomNumGenerator(7,8) * 10;//Mining
-            money = 50;
-        case 1:
-            capacity = randomNumGenerator(9,10) * 10;//Trade
+            capacity = randomNumGenerator(7,8) * 30;//Mining
             money = 100;
+        case 1:
+            capacity = randomNumGenerator(9,10) * 30;//Trade
+            money = 200;
         case 2:
-            capacity = randomNumGenerator(3,4) * 10;//Corvette
-            money = 30;
+            capacity = randomNumGenerator(3,4) * 30;//Corvette
+            money = 100;
         case 3:
-            capacity = randomNumGenerator(4,5) * 10;//Frigate
-            money = 30;
+            capacity = randomNumGenerator(4,5) * 30;//Frigate
+            money = 100;
         case 4:
-            capacity = randomNumGenerator(6,7) * 10;//Destroyer
-            money = 30;
+            capacity = randomNumGenerator(6,7) * 30;//Destroyer
+            money = 100;
         case 5:
-            capacity = randomNumGenerator(6,7) * 10;//Battlecruiser
-            money = 30;
+            capacity = randomNumGenerator(6,7) * 30;//Battlecruiser
+            money = 100;
     }
 
     return CargoHold(capacity, money);
@@ -511,11 +609,11 @@ std::string generateExplorerShipName()
 //Used for Explorer Crew!!! Not Generic
 Crew generateExplorerShipCrew(int size)
 {
-    Captain captain(randomNameGenerator(), randomNumGenerator(30,70), "Captain", 20);
-    Pilot pilot(randomNameGenerator(), randomNumGenerator(30,70), "Lieutenant", 20);
-    Engineer engineer(randomNameGenerator(), randomNumGenerator(30,70), "Lieutenant", 20);
-    MiningOfficer miningOfficer(randomNameGenerator(), randomNumGenerator(30,70), "Lieutenant", 20);
-    WeaponsOfficer weaponsOfficer(randomNameGenerator(), randomNumGenerator(30,70), "Lieutenant", 20);
+    Captain captain(randomNameGenerator(), randomNumGenerator(30,70), "Captain", 10);
+    Pilot pilot(randomNameGenerator(), randomNumGenerator(30,70), "Lieutenant", 10);
+    Engineer engineer(randomNameGenerator(), randomNumGenerator(30,70), "Lieutenant", 10);
+    MiningOfficer miningOfficer(randomNameGenerator(), randomNumGenerator(30,70), "Lieutenant", 10);
+    WeaponsOfficer weaponsOfficer(randomNameGenerator(), randomNumGenerator(30,70), "Lieutenant", 10);
     int crewNum = generateCrewNum(size);
 
     return Crew(captain, pilot, engineer, miningOfficer, weaponsOfficer, crewNum);
@@ -536,6 +634,9 @@ Ship generateNewShip(Alien &alien, int difficultyModifier)
     //Generate Crew (Crew number based on size)
     Crew crew = generateGenericCrew(size, difficultyModifier);
 
+    //Generate Amount of Weapons
+    int amountOfWeapons = generateAmountOfWeapons(type);
+
     //Generate miningLvl (Based on type)
     int miningLvl = generateMiningLvl(type);
 
@@ -551,7 +652,7 @@ Ship generateNewShip(Alien &alien, int difficultyModifier)
     //Generate CargoHold (Based on type)
     CargoHold cargoHold = generateCargoHold(type);
 
-    return Ship(name, type, size, crew, miningLvl, hull, shield, combatManeuver, cargoHold);
+    return Ship(name, type, size, crew, amountOfWeapons, miningLvl, hull, shield, combatManeuver, cargoHold);
 }
 
 CargoHold generateCargoHold(std::string type)
@@ -722,6 +823,25 @@ void populateWeapons(std::string type, Weapon weapons[])
     }
 }
 
+int generateAmountOfWeapons(std::string type)
+{
+    switch(typeNumber(type))
+    {
+        case 0:
+            return 0;
+        case 1:
+            return 1;
+        case 2:
+            return 1;
+        case 3:
+            return 2;
+        case 4:
+            return 3;
+        case 5:
+            return 4;
+    }
+}
+
 Weapon generateWeapon()
 {
     int weaponSelect = randomNumGenerator(0,4);
@@ -731,7 +851,7 @@ Weapon generateWeapon()
         case 0: //Laser
             return Weapon("Laser", 0, 30, 60, 20, 1);
         case 1: //Missiles
-            return Weapon("Missiles", 1, 70, 30, 20, 2);
+            return Weapon("Missile", 1, 70, 30, 20, 2);
         case 2: //EMP
             return Weapon("EMP", 0, 30, 80, 60, 3);
         case 3: //Fighters
@@ -764,7 +884,7 @@ int generateMiningLvl(std::string type)
 //Used for Generic Crew !!!NOT EXPLORER CREW!!!
 Crew generateGenericCrew(int size, int difficultyModifier)
 {
-    int max = difficultyModifier + 5;
+    int max = difficultyModifier + 3;
     int min = difficultyModifier;
 
     Captain captain(randomNameGenerator(), randomNumGenerator(30,70), "Captain", randomNumGenerator(min,max));

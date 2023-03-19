@@ -33,6 +33,8 @@ class TradeStation
         int getFuelGoods() {return fuelGoods;}
         int getFoodGoods() {return foodGoods;}
         int getBarteringLvl() {return barteringLvl;}
+        void removeFoodGoods(int);
+        void removeFuelGoods(int);
 };
 
 class Planet
@@ -52,7 +54,7 @@ class Planet
         std::string getType() {return type;}
         int getSize() {return size;}
         int getPopulation() {return population;}
-        Ship getShip() {return ship;}
+        Ship& getShip() {return ship;}
         Resource& getResource() {return resource;}
 };
 
@@ -118,9 +120,15 @@ class EmptySector : public Sector
 
 class AnomalySector : public Sector
 {
-    //TBD
+    public:
+        AnomalySector() {};
+        AnomalySector(std::string, std::string, std::string);
+        void resolveLostSatellite(ExplorerShip&, std::string, int);
+        void resolveAncientPlace(ExplorerShip&, std::string);
+        void resolvePrimitiveCivilisation(ExplorerShip&, std::string);
 };
 
+AnomalySector generateAnomalySector();
 EmptySector generateEmptySector();
 TradeSector generateTradeSector();
 TradeStation generateTradeStation();
@@ -129,6 +137,7 @@ Planet generateEmptyPlanet();
 Resource generateResource(std::string);
 int generateResourceMiningDifficulty(std::string);
 int generateResourceValue(std::string);
+int generateResourceMinValue(std::string);
 int generateResourceSize(std::string);
 std::string generateResourceType(std::string);
 std::string generateResourceName(std::string);

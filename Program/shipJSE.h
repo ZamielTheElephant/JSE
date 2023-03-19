@@ -1,4 +1,6 @@
+#include <vector>
 class Alien;
+class Ship;
 
 class Weapon
 {
@@ -67,11 +69,15 @@ class CargoHold
         int getFood() {return food;}
         int getFuel() {return fuel;}
         int getMoney() {return money;}
-        void setMoney(int newMoney) {this->money = newMoney;}
         Resource* getResources() {return resources;}
         int determineAmountOfResources();
         void addResource(Resource&);
-        void removeResource(int);
+        void buyResource(int);
+        void sellResource(int, int);
+        void removeFood(int);
+        void buyFood(int);
+        void removeFuel(int);
+        void buyFuel(int);
 };
 
 class SkillLvl
@@ -197,7 +203,7 @@ class Crew
         MiningOfficer getMiningOfficer() {return miningOfficer;}
         WeaponsOfficer getWeaponsOfficer() {return weaponsOfficer;}
         int getCrewNum() {return crewNum;}
-        void killReplaceOfficer();
+        void killReplaceOfficer(Ship*, std::string);
         void killCrew(int numKilled);
 };
 
@@ -210,6 +216,7 @@ class Ship
         Crew crew;
         int miningLvl;
         Weapon weapons[5];
+        int amountOfWeapons;
         Defence defences[2];
         int hull;
         int shields;
@@ -217,41 +224,67 @@ class Ship
         CargoHold cargoHold;
     public:
         Ship() {};
-        Ship(std::string, std::string, int, Crew, int, int, int, int, CargoHold);
+        Ship(std::string, std::string, int, Crew, int, int, int, int, int, CargoHold);
         //Ship(Ship* ship);
-        std::string getName() {return name;}
-        std::string getType() {return type;}
+        virtual std::string getName() {return name;}
+        virtual std::string getType() {return type;}
         int getSize() {return size;}
         int getMiningLvl() {return miningLvl;}
         Crew getCrew() {return crew;}
         Weapon* getWeapons() {return weapons;}
+        int getAmountOfWeapons() {return amountOfWeapons;}
         Defence* getDefences() {return defences;}
         int getHull() {return hull;}
         int getShields() {return shields;}
         CargoHold& getCargoHold() {return cargoHold;}
-        void setShields(int damage) {this->shields -= damage;}
         int determineCombatRoll();
-        void dealDamage(Weapon&, WeaponsOfficer, Defence&);
-        void dealDamage(Weapon&, WeaponsOfficer);
-        void damageCrew(int damageDealt);
-        Weapon& selectWeapon(int round);
+        void dealDamage(Weapon&, WeaponsOfficer, Defence&, std::string);
+        void dealDamage(Weapon&, WeaponsOfficer, std::string);
+        void dealAnomalyDamage(int);
+        void damageCrew(int, std::string);
+        Weapon& selectWeapon();
         bool determineDefenceUse();
+        void addWeapon(Weapon);
+        int determineAmountOfCurrentWeapons();
         int determineAmountOfWeapons();
         int determineAmountOfDefences();
         bool checkFortitude();
         void repairShip();
 };
 
+class LogBook
+{
+    private:
+        std::vector<std::string> sectorLogs;
+        std::vector<std::string> crewDeathRecords;
+        int startMoney;
+        int startFood;
+        int startFuel;
+        int startCrewNum;
+        std::string finalState = "Survived";
+    public:
+        LogBook() {};
+        LogBook(int,int,int,int);
+        std::vector<std::string> getSectorLogs() {return sectorLogs;}
+        std::vector<std::string> getCrewDeathRecords() {return crewDeathRecords;}
+        int getStartCrewNum() {return startCrewNum;}
+        std::string getFinalState() {return finalState;}
+        void setFinalState(std::string newFinalState) {finalState = newFinalState;}
+        void addSectorLog(std::string sectorLog);
+        void editTempCrewDeathRecord(std::string);
+        void addCrewDeathRecord(std::string);
+};
+
 class ExplorerShip : public Ship
 {
     private:
-        //SectorLog logBook[];
-        int date;
+        LogBook logBook;
     public:
         ExplorerShip() {};
-        ExplorerShip(std::string, std::string, int, Crew, int, int, int, int, CargoHold);
+        ExplorerShip(std::string, std::string, int, Crew, int, int, int, int, int, CargoHold, LogBook);
         //ExplorerShip(ExplorerShip* explorerShip);
-        int getDate() {return date;}
+        LogBook& getLogBook() {return logBook;}
+        void takeSpoils(int,int);
 };
 
 //Explorer Ship Generator Functions
@@ -269,6 +302,7 @@ int generateHull(std::string);
 void populateDefences(std::string, Defence[]);
 Defence generateDefence();
 void populateWeapons(std::string, Weapon[]);
+int generateAmountOfWeapons(std::string);
 Weapon generateWeapon();
 int generateMiningLvl(std::string);
 Crew generateGenericCrew(int, int);
