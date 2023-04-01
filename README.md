@@ -1,2 +1,2 @@
 # JSE
-A space simulation that I started in University.
+A space exploration simulation that I started in University.
