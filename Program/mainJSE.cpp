@@ -9,7 +9,13 @@ int main(int argc, char *argv[])
     std::cout << "The " << exShip.getType() << " " << exShip.getName() << " launched." << std::endl;
     std::cout << "--------------------------------------------------" << std::endl;
 
-    for(int i = 0; i < atoi(argv[1]); i++)
+    int sectorTravel = 0;
+
+    std::cout << "Enter number of Sectors to travel to: ";
+    std::cin >> sectorTravel;
+    std::cout << std::endl;
+
+    for(int i = 0; i < sectorTravel; i++)
     {
         //Calc Cost of travel and apply to ship
         travelSector(exShip, i);
