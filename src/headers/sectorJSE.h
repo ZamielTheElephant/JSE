@@ -1,3 +1,5 @@
+#include <map>
+#include <utility>
 
 class Alien
 {
@@ -50,12 +52,12 @@ class Planet
         Planet() {};
         Planet(std::string, std::string, int, int, Ship, Resource);
         //Planet(Planet*);
-        std::string getName() {return name;}
-        std::string getType() {return type;}
-        int getSize() {return size;}
-        int getPopulation() {return population;}
-        Ship& getShip() {return ship;}
-        Resource& getResource() {return resource;}
+        std::string getName() { return name; }
+        std::string getType() { return type; }
+        int getSize() { return size; }
+        int getPopulation() { return population; }
+        Ship& getShip() { return ship; }
+        Resource& getResource() { return resource; }
 };
 
 class Sector
@@ -64,6 +66,7 @@ class Sector
         std::string name;
         std::string type;
         std::string environment;
+        std::pair<double, double> coordinate;
     public:
         Sector() {};
         Sector(std::string, std::string, std::string);
@@ -71,6 +74,7 @@ class Sector
         std::string getType() {return type;}
         std::string getName() {return name;}
         std::string getEnvironment() {return environment;}
+        void setCoordinates(std::pair<double, double> newCoordinates) {this->coordinate = newCoordinates;}
 };
 
 class ShipSector : public Sector
@@ -128,6 +132,17 @@ class AnomalySector : public Sector
         void resolvePrimitiveCivilisation(ExplorerShip&, std::string);
 };
 
+class SectorList
+{
+    private:
+        std::vector<Sector*> sectorList;
+    public:
+        SectorList() {};
+        std::vector<Sector*> getSectorList();
+        Sector* getSectorFromList();
+};
+
+SectorList* generateSectorList(int);
 AnomalySector generateAnomalySector();
 EmptySector generateEmptySector();
 TradeSector generateTradeSector();

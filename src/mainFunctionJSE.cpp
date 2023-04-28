@@ -795,3 +795,22 @@ int randomNumGenerator(int min, int max)
 
     return uniform(randEng);
 }
+
+int randomNumGenerator(double min, double max)
+{
+    std::uniform_int_distribution<double> uniform(min, max);
+
+    return uniform(randEng);
+}
+
+int selectSectorFromList(SectorList* sectorList, int currentSector)
+{
+    //Display Sector List 
+    sectorList->printSectorSelect();
+
+    //Request selection of sector user input
+
+
+    //Return Selected sector index
+    return currentSector;
+}

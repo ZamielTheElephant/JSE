@@ -35,3 +35,75 @@ int sectorTypeNumber(std::string type)
     else
         return 4;
 }
+
+Sector* generateSector(std::vector<std::pair<double, double>> &existingCoordinates, int count)
+{
+    Sector newSector;
+    switch (determineSectorType())
+    {
+        case 0:
+            newSector = generateAnomalySector();
+            break;
+        case 1:
+            newSector = generateEmptySector();
+            break;
+        case 2:
+            newSector = generateTradeSector();
+            break;
+        case 3:
+            newSector = generatePlanetSector(difficultyModifier(count));
+            break;
+        case 4:
+            newSector = generateShipSector(difficultyModifier(count));
+            break;
+    }
+
+    std::pair<double, double> newCoordinates;
+
+    //Generates 
+    bool loop = true;
+    while (loop)
+    {
+        loop = false;
+        
+        //Generate Sector Coordinates
+        newCoordinates = std::make_pair(randomNumGenerator(0.0, 100.0), randomNumGenerator(0.0, 100.0));
+
+        if (std::find(existingCoordinates.begin(), existingCoordinates.end(), newCoordinates) != existingCoordinates.end())
+        {
+            loop = true;
+            break;
+        }
+    }
+    
+    newSector.setCoordinates(newCoordinates);
+    existingCoordinates.push_back(newCoordinates);
+
+    return &newSector;
+}
+
+
+
+//SectorMap Functions
+SectorList* generateSectorList(int sectorCount)
+{
+    SectorList* sectorList = new SectorList();
+
+    //Keep track of exisitng sector coordinates so two aren't created in the same location
+    std::vector<std::pair<double, double>> existingCoordinates;
+
+    //Loop to generate the specified amount of sectors
+    for (int i = 0; i < sectorCount; i++)
+    {
+        //Generate new sector
+        Sector* newSector = generateSector(existingCoordinates, i);
+        sectorList->getSectorList().push_back(newSector);
+    }
+
+    return sectorList;
+}
+
+std::vector<Sector*> SectorList::getSectorList()
+{
+    return this->sectorList;
+}

@@ -9,14 +9,21 @@ int main(int argc, char *argv[])
     std::cout << "The " << exShip.getType() << " " << exShip.getName() << " launched." << std::endl;
     std::cout << "--------------------------------------------------" << std::endl;
 
-    int sectorTravel = 0;
+    int sectorCount = 0;
 
-    std::cout << "Enter number of Sectors to travel to: ";
-    std::cin >> sectorTravel;
+    std::cout << "Enter number of Sectors to generate: ";
+    std::cin >> sectorCount;
     std::cout << std::endl;
 
-    for(int i = 0; i < sectorTravel; i++)
+    SectorList* sectorList = generateSectorList(sectorCount);
+    int selectedSector = 0;
+
+    for(int i = 0; i < sectorCount; i++)
     {
+        //Display List of Sectors
+        selectedSector = selectSectorFromList(sectorList, selectedSector);
+        //Select sector to travel to
+
         //Calc Cost of travel and apply to ship
         travelSector(exShip, i);
         std::cout << "Sector " << (i+1) << " Travel" << std::endl;
@@ -69,5 +76,5 @@ int main(int argc, char *argv[])
         std::cout << "--------------------------------------------------" << std::endl;
     }
 
-    std::cout << "End" << std::endl;
+    system("pause");
 }

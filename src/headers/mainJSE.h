@@ -26,4 +26,5 @@ void describeEmptySector(EmptySector);
 void resolveAnomalySector(ExplorerShip&, int);
 void travelSector(ExplorerShip&, int);
 void setRandomSeed();
-int randomNumGenerator(int,int);
+int randomNumGenerator(int, int);
+int selectSectorFromList(SectorList*, int);
